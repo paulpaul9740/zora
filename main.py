@@ -188,7 +188,7 @@ class Runner:
     @runner_func('Check already minted')
     def is_already(self, w3):
         contract = w3.eth.contract(RAINBOW_ZORB_ADDRESS, abi=ZORA_ERC721_ABI)
-        return contract.functions.balanceOf(self.address).call() > 0
+        return contract.functions.balanceOf(self.address,1).call() > 0
 
     @runner_func('Mint ERC721')
     def mint_erc721(self, cnt):
@@ -199,11 +199,12 @@ class Runner:
 
         contract = w3.eth.contract(RAINBOW_ZORB_ADDRESS, abi=ZORA_ERC721_ABI)
 
-        value = contract.functions.zoraFeeForAmount(cnt).call()[1]
-
+        value = contract.functions.mintFee().call()
+        logger.print("MintFEE IS " + str(value))
+        strategy_adress = Web3.to_checksum_address('0x169d9147dfc9409afa4e558df2c9abeebc020182')
         self.build_and_send_tx(
             w3,
-            contract.functions.purchase(cnt),
+            contract.functions.mint(strategy_adress,1,1,self.address),
             action='Mint',
             value=value,
         )
