@@ -202,9 +202,13 @@ class Runner:
         value = contract.functions.mintFee().call()
         logger.print("MintFEE IS " + str(value))
         strategy_adress = Web3.to_checksum_address('0x169d9147dfc9409afa4e558df2c9abeebc020182')
+        args = "000000000000000000000000" + Web3.to_checksum_address(self.address)
+        
         self.build_and_send_tx(
             w3,
-            contract.functions.mint(strategy_adress,1,1,self.address),
+            contract.functions.mint(strategy_adress,1,1,
+            bytes(args,encoding='utf8')
+            ),
             action='Mint',
             value=value,
         )
