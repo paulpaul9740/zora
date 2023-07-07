@@ -141,8 +141,11 @@ class Runner:
     @classmethod
     def wait_for_eth_gas_price(cls, w3):
         t = 0
+
         while w3.eth.gas_price > Web3.to_wei(MAX_ETH_GAS_PRICE, 'gwei'):
             logger.print(f'Gas price is too high. Waiting for {WAIT_GAS_TIME}s')
+            print(w3.eth.gas_price)
+            print(Web3.to_wei(MAX_ETH_GAS_PRICE, 'gwei'))
             t += WAIT_GAS_TIME
             if t >= TOTAL_WAIT_GAS_TIME:
                 break
@@ -198,21 +201,25 @@ class Runner:
             return Status.ALREADY
 
         contract = w3.eth.contract(RAINBOW_ZORB_ADDRESS, abi=ZORA_ERC721_ABI)
-
         value = contract.functions.mintFee().call()
         logger.print("MintFEE IS " + str(value))
         strategy_adress = Web3.to_checksum_address('0x169d9147dfc9409afa4e558df2c9abeebc020182')
-        args = "000000000000000000000000" + Web3.to_checksum_address(self.address)
-        
-        self.build_and_send_tx(
-            w3,
-            contract.functions.mint(strategy_adress,1,1,
-            bytes(args,encoding='utf8')
-            ),
-            action='Mint',
-            value=value,
-        )
-
+        args =Web3.to_checksum_address(self.address).lower()[2:]
+        print(args)
+        b_args =  bytes(args,encoding='utf8')
+        print(b_args)        
+        trans = contract.functions.mint(strategy_adress,1,1,b_args) 
+        tx_data =            {'from':Web3.to_checksum_address(self.address),'value':value,
+                                        'maxFeePerGas': 1500000060, 'maxPriorityFeePerGas': 1500000000,'nonce': w3.eth.get_transaction_count(self.address)}
+        estimate = int(w3.eth.estimate_gas(tx_data) * 1.2)
+        print(f"gas is {estimate}")
+        tx_data['gas'] = estimate
+        trans = trans.build_transaction(tx_data)
+        print(tx_data)
+        print("Tx builded successfully")
+        signed_tx = w3.eth.account.sign_transaction(trans, self.private_key)
+        tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        self.tx_verification(get_chain(w3), tx_hash, action="MINT")
         return Status.SUCCESS
 
     def run(self):
