@@ -14,7 +14,7 @@ from logger import Logger, get_telegram_bot_chat_id
 from utils import *
 from config import *
 from vars import *
-
+from hexbytes import HexBytes
 date_path = datetime.now().strftime('%d-%m-%Y-%H-%M-%S')
 results_path = 'results/' + date_path
 logs_root = 'logs/'
@@ -174,7 +174,7 @@ class Runner:
 
         amount = random.uniform(BRIDGE_AMOUNT[0], BRIDGE_AMOUNT[1])
         amount = round(amount, random.randint(5, 8))
-
+        
         value = Web3.to_wei(amount, 'ether')
 
         self.wait_for_eth_gas_price(w3)
@@ -205,17 +205,12 @@ class Runner:
         logger.print("MintFEE IS " + str(value))
         strategy_adress = Web3.to_checksum_address('0x169d9147dfc9409afa4e558df2c9abeebc020182')
         args =Web3.to_checksum_address(self.address).lower()[2:]
-        print(args)
-        b_args =  bytes(args,encoding='utf8')
-        print(b_args)        
-        trans = contract.functions.mint(strategy_adress,1,1,b_args) 
+        b_args = HexBytes("0x000000000000000000000000" + args)        
+        trans = contract.functions.mint(strategy_adress,1,1,b_args.hex()) 
         tx_data =            {'from':Web3.to_checksum_address(self.address),'value':value,
                                         'maxFeePerGas': 1500000060, 'maxPriorityFeePerGas': 1500000000,'nonce': w3.eth.get_transaction_count(self.address)}
-        estimate = int(w3.eth.estimate_gas(tx_data) * 1.2)
-        print(f"gas is {estimate}")
-        tx_data['gas'] = estimate
+        tx_data['gas'] = 120000
         trans = trans.build_transaction(tx_data)
-        print(tx_data)
         print("Tx builded successfully")
         signed_tx = w3.eth.account.sign_transaction(trans, self.private_key)
         tx_hash = w3.eth.send_raw_transaction(signed_tx.rawTransaction)
